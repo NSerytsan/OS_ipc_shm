@@ -48,9 +48,17 @@ void *calc_g_routine(void *arg)
     close(fd);
 }
 
-int operation_or(int, int)
+int operation_or(int result_f, int result_g)
 {
+    if (result_f == 1 || result_g == 1)
+    {
+        return 1;
+    }
 
+    if (result_g == 0 && result_g == 0)
+    {
+        return 0;
+    }
 }
 
 int main(int, char **)
@@ -80,6 +88,7 @@ int main(int, char **)
     pthread_create(&tid_f, NULL, calc_f_routine, &x);
     pthread_create(&tid_g, NULL, calc_g_routine, &x);
 
+    // sleep(1);
     while (*result_f == -1 || *result_g == -1)
     {
         printf("\nNo result returned. Continue calculation? <y/n>");
@@ -97,6 +106,7 @@ int main(int, char **)
     if (answer == 'y')
     {
         result = operation_or(*result_f, *result_g);
+        printf("\nf(%d) || g(%d) = %d\n", x, x, result);
     }
 
     // delete shared memory
