@@ -19,7 +19,7 @@ int g(int x)
     return (x > 0);
 }
 
-void *calc_f_routine(void *arg)
+void *f_routine(void *arg)
 {
     int fd = -1;
     int *result = NULL;
@@ -33,7 +33,7 @@ void *calc_f_routine(void *arg)
     close(fd);
 }
 
-void *calc_g_routine(void *arg)
+void *g_routine(void *arg)
 {
     int fd = -1;
     int *result = NULL;
@@ -85,8 +85,8 @@ int main(int, char **)
     printf("\nInput x: ");
     scanf("%d", &x);
 
-    pthread_create(&tid_f, NULL, calc_f_routine, &x);
-    pthread_create(&tid_g, NULL, calc_g_routine, &x);
+    pthread_create(&tid_f, NULL, f_routine, &x);
+    pthread_create(&tid_g, NULL, g_routine, &x);
 
     // sleep(1);
     while (*result_f == -1 || *result_g == -1)
