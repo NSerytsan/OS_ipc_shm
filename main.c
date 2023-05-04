@@ -1,11 +1,13 @@
 #include <stdio.h>
+#include <ctype.h>
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <pthread.h>
 
-#define SHARED_MEM_NAME_F_FUNC "/shared_mem_function_F"
-#define SHARED_MEM_NAME_G_FUNC "/shared_mem_function_G"
+#define SHARED_MEM_NAME_F_FUNC "/shared_mem_function_f"
+#define SHARED_MEM_NAME_G_FUNC "/shared_mem_function_g"
+#define SIZE sizeof(int)
 
 int f(int x)
 {
@@ -22,12 +24,12 @@ void *calc_f_routine(void *arg)
     int fd = -1;
     int *result = NULL;
     int x = *(int *)arg;
-    fd = shm_open(SHARED_MEM_NAME_G_FUNC, O_RDWR, 0600);
-    result = mmap(0, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    fd = shm_open(SHARED_MEM_NAME_F_FUNC, O_RDWR, 0666);
+    result = mmap(0, SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 
     *result = f(x);
 
-    munmap(result, sizeof(int));
+    munmap(result, SIZE);
     close(fd);
 }
 
@@ -37,13 +39,18 @@ void *calc_g_routine(void *arg)
     int *result = NULL;
     int x = *(int *)arg;
 
-    fd = shm_open(SHARED_MEM_NAME_G_FUNC, O_RDWR, 0600);
-    result = mmap(0, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    fd = shm_open(SHARED_MEM_NAME_G_FUNC, O_RDWR, 0666);
+    result = mmap(0, SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 
     *result = g(x);
 
-    munmap(result, sizeof(int));
+    munmap(result, SIZE);
     close(fd);
+}
+
+int operation_or(int, int)
+{
+
 }
 
 int main(int, char **)
@@ -54,12 +61,16 @@ int main(int, char **)
     int *result_f = NULL, *result_g = NULL;
     pthread_t tid_f, tid_g;
     int x = 0;
+    int result = -1;
+    char answer = 'y';
 
     // create shared memory for results of g() and f() functions
     fd_f = shm_open(SHARED_MEM_NAME_F_FUNC, flags, mode);
     fd_g = shm_open(SHARED_MEM_NAME_G_FUNC, flags, mode);
-    result_f = mmap(0, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, fd_f, 0);
-    result_g = mmap(0, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, fd_g, 0);
+    ftruncate(fd_f, SIZE);
+    ftruncate(fd_g, SIZE);
+    result_f = (int *)mmap(0, SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd_f, 0);
+    result_g = (int *)mmap(0, SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd_g, 0);
 
     *result_f = *result_g = -1; // undefined state
 
@@ -71,19 +82,26 @@ int main(int, char **)
 
     while (*result_f == -1 || *result_g == -1)
     {
-        printf ("No result returned. Continue calculation? <Y/n>");
-        if (getchar() == 'n')
+        printf("\nNo result returned. Continue calculation? <Y/n>");
+        scanf(" %c", &answer);
+        if (tolower(answer) == 'n')
         {
             break;
         }
+        answer = 'y';
     }
 
     pthread_join(tid_f, NULL);
     pthread_join(tid_g, NULL);
 
+    if (answer == 'y')
+    {
+        result = operation_or(*result_f, *result_g);
+    }
+
     // delete shared memory
-    munmap(result_f, sizeof(int));
-    munmap(result_g, sizeof(int));
+    munmap(result_f, SIZE);
+    munmap(result_g, SIZE);
     close(fd_f);
     close(fd_g);
     shm_unlink(SHARED_MEM_NAME_F_FUNC);
