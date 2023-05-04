@@ -82,9 +82,9 @@ int main(int, char **)
 
     while (*result_f == -1 || *result_g == -1)
     {
-        printf("\nNo result returned. Continue calculation? <Y/n>");
+        printf("\nNo result returned. Continue calculation? <y/n>");
         scanf(" %c", &answer);
-        if (tolower(answer) == 'n')
+        if ((answer = tolower(answer)) == 'n')
         {
             break;
         }
