@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <sys/stat.h>
 
 #define SHARED_MEM_NAME_F_FUNC "/shared_mem_function_f"
 #define SHARED_MEM_NAME_G_FUNC "/shared_mem_function_g"
@@ -24,7 +25,7 @@ void *f_routine(void *arg)
     int fd = -1;
     int *result = NULL;
     int x = *(int *)arg;
-    fd = shm_open(SHARED_MEM_NAME_F_FUNC, O_RDWR, 0666);
+    fd = shm_open(SHARED_MEM_NAME_F_FUNC, O_RDWR, 0600);
     result = mmap(0, SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 
     *result = f(x);
@@ -39,7 +40,7 @@ void *g_routine(void *arg)
     int *result = NULL;
     int x = *(int *)arg;
 
-    fd = shm_open(SHARED_MEM_NAME_G_FUNC, O_RDWR, 0666);
+    fd = shm_open(SHARED_MEM_NAME_G_FUNC, O_RDWR, 0600);
     result = mmap(0, SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 
     *result = g(x);
@@ -65,7 +66,7 @@ int main(int, char **)
 {
     int flags = O_CREAT | O_RDWR;
     int fd_f = -1, fd_g = -1;
-    mode_t mode = 0666;
+    mode_t mode = 0600;
     int *result_f = NULL, *result_g = NULL;
     pthread_t tid_f, tid_g;
     int x = 0;
@@ -73,6 +74,7 @@ int main(int, char **)
     char answer = 'y';
 
     // create shared memory for results of g() and f() functions
+    umask (0000);
     fd_f = shm_open(SHARED_MEM_NAME_F_FUNC, flags, mode);
     fd_g = shm_open(SHARED_MEM_NAME_G_FUNC, flags, mode);
     ftruncate(fd_f, SIZE);
@@ -88,7 +90,7 @@ int main(int, char **)
     pthread_create(&tid_f, NULL, f_routine, &x);
     pthread_create(&tid_g, NULL, g_routine, &x);
 
-    // sleep(1);
+    //usleep(100);
     while (*result_f == -1 || *result_g == -1)
     {
         printf("\nNo result returned. Continue calculation? <y/n>");
