@@ -74,7 +74,7 @@ int main(int, char **)
     char answer = 'y';
 
     // create shared memory for results of g() and f() functions
-    umask (0000);
+    umask(0000);
     fd_f = shm_open(SHARED_MEM_NAME_F_FUNC, flags, mode);
     fd_g = shm_open(SHARED_MEM_NAME_G_FUNC, flags, mode);
     ftruncate(fd_f, SIZE);
@@ -90,7 +90,7 @@ int main(int, char **)
     pthread_create(&tid_f, NULL, f_routine, &x);
     pthread_create(&tid_g, NULL, g_routine, &x);
 
-    //usleep(100);
+    // usleep(100);
     while (*result_f == -1 || *result_g == -1)
     {
         printf("\nNo result returned. Continue calculation? <y/n>");
